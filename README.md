@@ -42,6 +42,6 @@ This API contains basic operations for client to hire contractor. Using NodeJS +
 
 You can find all the endpoint's detailed configuration from this [POSTMAN Collection](https://documenter.getpostman.com/view/1316746/2s9Y5YR2mk)
 
-## 🙅🏻‍♂️ Things can be improved
+## 🙅🏻‍♂️ Things can be improve
 
 Two admin endpoints `/admin/best-profession?start=<date>&end=<date>` & `/admin/best-clients?start=<date>&end=<date>&limit=<integer>` should be authenticated with admin credentials. Currently it allows without any auth methods in this demo.
