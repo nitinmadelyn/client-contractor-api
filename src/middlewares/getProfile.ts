@@ -20,12 +20,12 @@ declare global {
 }
 
 export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
-    const profile = await Profile.findOne({ where: { id: req.get('profile_id') || 0 } });
+    const profile = (await Profile.findOne({ where: { id: req.get('profile_id') || 0 } }))?.toJSON();
     if (!profile) {
         throw new NotFoundError('Profile not found.');
     }
 
-    const { id, firstName, lastName, profession, balance, type } = profile.dataValues;
+    const { id, firstName, lastName, profession, balance, type } = profile;
     req.profile = { id, firstName, lastName, profession, balance, type };
 
     next();

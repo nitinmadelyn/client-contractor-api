@@ -1,9 +1,8 @@
 import { Sequelize, Model, DataTypes } from "sequelize";
+const env = process.env.NODE_ENV || 'development';
+const config = require('../config/database')[env];
+const sequelize = new Sequelize(config);
 
-const sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: './database.sqlite3'
-});
 
 class Profile extends Model { }
 Profile.init(
@@ -75,11 +74,37 @@ Job.init(
     }
 );
 
-Profile.hasMany(Contract, { as: 'Contractor', foreignKey: 'ContractorId' })
-Contract.belongsTo(Profile, { as: 'Contractor' })
-Profile.hasMany(Contract, { as: 'Client', foreignKey: 'ClientId' })
-Contract.belongsTo(Profile, { as: 'Client' })
-Contract.hasMany(Job)
-Job.belongsTo(Contract)
+Profile.hasMany(Contract, { as: 'Contractor', foreignKey: 'ContractorId' });
+Profile.hasMany(Contract, { as: 'Client', foreignKey: 'ClientId' });
+Contract.belongsTo(Profile, { as: 'Client' });
+Contract.belongsTo(Profile, { as: 'Contractor' });
+Contract.hasMany(Job);
+Job.belongsTo(Contract);
 
-export { Profile, Contract, Job };
+async function transferPayment(clientId: number, contractorId: number, amount: number, jobId: string) {
+    return sequelize.transaction(async (t) => {
+        const client: any = await Profile.findByPk(clientId, { transaction: t });
+        const contractor: any = await Profile.findByPk(contractorId, { transaction: t });
+
+        if (!client || !contractor) {
+            throw new Error('Client or Contractor not found');
+        }
+
+        const dateToUpdate = new Date().toISOString();
+        client.balance -= amount;
+        client.updatedAt = dateToUpdate;
+        contractor.balance += amount;
+        contractor.updatedAt = dateToUpdate;
+
+        await client.save({ transaction: t });
+        await contractor.save({ transaction: t });
+
+        const job: any = await Job.findByPk(jobId, { transaction: t });
+        job.paid = true;
+        job.paymentDate = dateToUpdate;
+        job.updatedAt = dateToUpdate;
+        await job.save({ transaction: t });
+    });
+}
+
+export { Profile, Contract, Job, sequelize, transferPayment };
